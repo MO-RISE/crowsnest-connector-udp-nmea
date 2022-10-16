@@ -83,8 +83,9 @@ def multicast_nmea_0183(source):
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
     while True:
-        source.emit(sock.recv(10240))
+        # source.emit(sock.recv(10240))
         LOGGER.info(sock.recv(10240))
+        LOGGER.info("Running...")
 
 
 
