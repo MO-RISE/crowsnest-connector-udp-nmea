@@ -28,7 +28,7 @@ MCAST_PORT: int = env.int("MCAST_PORT", 60003)
 
 
 # Setup logger
-LOG_LEVEL = env.log_level("LOG_LEVEL", logging.WARNING)
+LOG_LEVEL = env.log_level("LOG_LEVEL", logging.INFO)
 logging.basicConfig(level=LOG_LEVEL)
 logging.captureWarnings(True)
 warnings.filterwarnings("once")
@@ -84,7 +84,7 @@ def multicast_nmea_0183(source):
 
     while True:
         source.emit(sock.recv(10240))
-        print(sock.recv(10240))
+        LOGGER.info(sock.recv(10240))
 
 
 
