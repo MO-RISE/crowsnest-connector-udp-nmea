@@ -1,0 +1,11 @@
+version: '3'
+services:
+
+  multicast-nmea:
+    build: .
+    # restart: unless-stopped
+    network_mode: "host"
+    ports: 
+     - 60003:60003 
+    # environment:
+      # - EXAMPLE=EXAMPLE
