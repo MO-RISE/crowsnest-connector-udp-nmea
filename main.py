@@ -76,18 +76,14 @@ def multicast_nmea_0183(source):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-
     sock.bind((MCAST_GRP, MCAST_PORT))
     mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
 
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
     while True:
-        # source.emit(sock.recv(10240))
+        source.emit(sock.recv(10240))
         LOGGER.info(sock.recv(10240))
-        LOGGER.info("Running...")
-
-
 
 
 if __name__ == "__main__":
@@ -107,10 +103,11 @@ if __name__ == "__main__":
 
     # # pipe_to_brefv.sink(partial(to_mqtt, topic=MQTT_TOPIC_POINTCLOUD))
 
-    # LOGGER.info("Connecting to MQTT broker...")
-    # mq.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT)
+    LOGGER.info("Connecting to MQTT broker...")
+    mq.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT)
 
-    # # Ouster SDK runs in the foreground so we put the MQTT stuff in a separate thread
-    # threading.Thread(target=mq.loop_forever, daemon=True).start()
+    # Socket Multicast runs in the foreground so we put the MQTT stuff in a separate thread
+    threading.Thread(target=mq.loop_forever, daemon=True).start()
 
+    # MAIN listener 
     multicast_nmea_0183(source)
