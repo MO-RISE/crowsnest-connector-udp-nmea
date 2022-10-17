@@ -49,6 +49,20 @@ To run the tests:
 
     no automatic tests yet...
 
+Add breaf as submodule:
+
+```basch
+
+git submodule add <url>
+
+
+# Once the project is added to your repo, you have to init and update it.
+
+git submodule init
+git submodule update
+
+```
+
 ## License
 
 Apache 2.0, see [LICENSE](./LICENSE)

@@ -5,11 +5,12 @@ import threading
 import socket
 import struct
 
+from datetime import datetime, timezone
 from streamz import Stream
 from environs import Env
 from paho.mqtt.client import Client as MQTT
 
-# from bresfv.envelope import Envelope
+from brefv_spec.envelope import Envelope
 
 
 # Reading config from environment variables
@@ -21,8 +22,8 @@ MQTT_TRANSPORT: str = env("MQTT_TRANSPORT", "tcp")
 MQTT_TLS: bool = env.bool("MQTT_TLS", False)
 MQTT_USER: str = env("MQTT_USER", None)
 MQTT_PASSWORD: str = env("MQTT_PASSWORD", None)
-MQTT_TOPIC: str = env("MQTT_TOPIC", "SENSOR/TOPIC")
-SENSOR_FREQUENCY: float = env.float("SENSOR_FREQUENCY", default=2)
+MQTT_TOPIC: str = env("MQTT_TOPIC", "SENSOR/TOPIC/RAW")
+SENSOR_FREQUENCY: float = env.float("SENSOR_FREQUENCY", default=1)
 MCAST_GRP: str = env("MCAST_GRP", "239.192.0.3")
 MCAST_PORT: int = env.int("MCAST_PORT", 60003)
 
@@ -45,17 +46,17 @@ if MQTT_TLS:
 mq.enable_logger(LOGGER)
 
 
-# def to_brefv(pcd: np.ndarray) -> Envelope:
-#     """From point cloud to brefv envelope"""
 
-#     envelope = Envelope(
-#         sent_at=datetime.now(timezone.utc).isoformat(),
-#         message=pcd.tolist(),
-#     )
 
-#     LOGGER.debug("Assembled into brefv envelope: %s", envelope)
+def to_brefv_raw(in_msg):
+    """Raw in message to brefv envelope"""
 
-#     return envelope.json()
+    envelope = Envelope(
+        sent_at=datetime.now(timezone.utc).isoformat(),
+        message=in_msg,
+    )
+    LOGGER.debug("Assembled into brefv envelope: %s", envelope)
+    return envelope.json()
 
 
 def to_mqtt(payload: Any, topic: str):
@@ -94,12 +95,18 @@ if __name__ == "__main__":
 
     source = Stream()
 
-    # # pipe_to_brefv = (
-    # #     source.latest()
-    # #     .rate_limit(1 / POINTCLOUD_FREQUENCY)
-    # #     .map(partial(rotate_pcd, attitude=OUSTER_ATTITUDE))
-    # #     .map(to_brefv)
-    # # )
+    # RAW
+    pipe_to_brefv = source.latest().map(to_brefv_raw).sink(to_mqtt, topic=MQTT_TOPIC)
+
+
+    # To Readable
+
+    # pipe_to_brefv = (
+    #     source.latest()
+    #     .rate_limit(1 / POINTCLOUD_FREQUENCY)
+    #     .map(partial(rotate_pcd, attitude=OUSTER_ATTITUDE))
+    #     .map(to_brefv)
+    # )
 
     # # pipe_to_brefv.sink(partial(to_mqtt, topic=MQTT_TOPIC_POINTCLOUD))
 
@@ -109,5 +116,5 @@ if __name__ == "__main__":
     # Socket Multicast runs in the foreground so we put the MQTT stuff in a separate thread
     threading.Thread(target=mq.loop_forever, daemon=True).start()
 
-    # MAIN listener 
+    # MAIN listener
     multicast_nmea_0183(source)
