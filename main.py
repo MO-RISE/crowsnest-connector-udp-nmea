@@ -95,7 +95,8 @@ if __name__ == "__main__":
 
     source = Stream()
 
-    # RAW
+    # RAW (test)
+
     pipe_to_brefv = source.latest().map(to_brefv_raw).sink(to_mqtt, topic=MQTT_TOPIC)
 
 
