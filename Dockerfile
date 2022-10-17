@@ -6,11 +6,7 @@ RUN pip3 install -r requirements.txt
 
 WORKDIR /app
 
-COPY brefv/ brefv/
-
-RUN mkdir brefv_spec && \
-    datamodel-codegen --input brefv/envelope.json --input-file-type jsonschema --output brefv_spec/envelope.py && \
-    datamodel-codegen --input brefv/messages --input-file-type jsonschema  --reuse-model --output brefv_spec/messages
+COPY brefv_spec/ brefv_spec/
 
 COPY main.py main.py
 
