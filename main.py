@@ -123,8 +123,8 @@ if __name__ == "__main__":
     pipe_to_brefv = (
         source
         .map(pars_nmea)
-        .map(to_brefv)
-        .sink(to_mqtt, topic=MQTT_TOPIC)
+        .map(to_brefv_raw)
+        .sink(to_mqtt, topic=MQTT_TOPIC_JSON)
     )
 
     # # pipe_to_brefv.sink(partial(to_mqtt, topic=MQTT_TOPIC_POINTCLOUD))
