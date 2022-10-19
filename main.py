@@ -95,7 +95,7 @@ def pars_nmea(nmea_msg_bytes):
     LOGGER.info(nmea_msg_bytes)
     nmea_msg = nmea_msg_bytes.decode("utf-8") 
     LOGGER.info(nmea_msg)
-    nmea_list = nmea_msg["message"].split("\r")
+    nmea_list = nmea_msg.split("\r")
 
     for nmea_str  in nmea_list:
         nmea_str =  "$"+ nmea_str.split("$")[-1]
