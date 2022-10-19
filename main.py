@@ -117,17 +117,16 @@ if __name__ == "__main__":
     source = Stream()
 
     # RAW MQTT stream 
-    pipe_to_brefv = source.map(to_brefv_raw).sink(to_mqtt, topic=MQTT_TOPIC_RAW)
+    pipe_to_brefv_raw = source.map(to_brefv_raw).sink(to_mqtt, topic=MQTT_TOPIC_RAW)
 
     # JSON MQTT stream
-    pipe_to_brefv = (
+    pipe_to_brefv_json = (
         source
         .map(pars_nmea)
         .map(to_brefv_raw)
         .sink(to_mqtt, topic=MQTT_TOPIC_JSON)
     )
 
-    # # pipe_to_brefv.sink(partial(to_mqtt, topic=MQTT_TOPIC_POINTCLOUD))
 
     LOGGER.info("Connecting to MQTT broker...")
     mq.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT)
