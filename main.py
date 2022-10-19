@@ -123,12 +123,8 @@ if __name__ == "__main__":
     pipe_to_brefv_raw = source.map(to_brefv_raw).sink(to_mqtt, topic=MQTT_TOPIC_RAW)
 
     # JSON MQTT stream
-    pipe_to_brefv_json = (
-        source
-        .map(pars_nmea)
-        .map(to_brefv_raw)
-        .sink(to_mqtt, topic=MQTT_TOPIC_JSON)
-    )
+    pipe_to_brefv_json = source.map(pars_nmea).map(to_brefv_raw).sink(to_mqtt, topic=MQTT_TOPIC_JSON)
+    
 
 
     LOGGER.info("Connecting to MQTT broker...")
