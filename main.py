@@ -13,6 +13,7 @@ from environs import Env
 from paho.mqtt.client import Client as MQTT
 
 from brefv_spec.envelope import Envelope
+from symbol import parameters
 
 
 # Reading config from environment variables
@@ -47,8 +48,6 @@ if MQTT_TLS:
     mq.tls_set()
 
 mq.enable_logger(LOGGER)
-
-
 
 
 def to_brefv_raw(in_msg):
@@ -92,24 +91,91 @@ def listen_multicast_nmea_0183(source):
 
 def pars_nmea(nmea_msg_bytes):
     """Parsing ANavS NMEA sentence"""
-    LOGGER.info(nmea_msg_bytes)
-    nmea_msg = nmea_msg_bytes.decode("utf-8") 
+
+    nmea_parameters = {
+        "timestamp": None,
+        "lat": None,
+        "lat_dir": None,
+        "lon": None,
+        "lon_dir": None,
+        "sog": None,
+        "cog": None,
+        "rot": None,
+        "heading": None,
+        "altitude": None,
+        "gps_quality": None,
+        "num_satellites": None,
+    }
+
+    nmea_msg = nmea_msg_bytes.decode("utf-8")
     LOGGER.info(nmea_msg)
     nmea_list = nmea_msg.split("\r")
 
-    for nmea_str  in nmea_list:
-        nmea_str =  "$"+ nmea_str.split("$")[-1]
-        LOGGER.info(nmea_str)
+    for nmea_str in nmea_list:
+        nmea_str = "$" + nmea_str.split("$")[-1]
+
         try:
-            msg = pynmea2.parse( nmea_str)
-            LOGGER.info(repr(msg))
-            LOGGER.info("--------")
+            nmea_type_msg = nmea_str.split(",")[0].replace("$", "")
+        
+            if nmea_type_msg == "PASHR":
+                PASHR_items = nmea_str.split(",")
+                PASHR = {
+                    "heading": float(PASHR_items[2]),
+                    "roll": float(PASHR_items[4]),
+                    "pitch": PASHR_items[5],
+                    "roll_accuracy": PASHR_items[7],
+                    "heading_accuracy": PASHR_items[9],
+                }
+                nmea_parameters.update(PASHR)
+
+            msg = pynmea2.parse(nmea_str)
+
+            if msg.sentence_type == "GGA":
+                GGA = {
+                    "timestamp": msg.timestamp.isoformat(),
+                    "lon": msg.lon,
+                    "lon_dir": msg.lon_dir,
+                    "lat": msg.lat,
+                    "lat_dir": msg.lat_dir,
+                    "altitude": msg.altitude,
+                    "lat_dir": msg.lat_dir,
+                    "num_satellites": msg.num_sats,
+                    "gps_quality": msg.gps_qual,
+                }
+                nmea_parameters.update(GGA)
+
+            elif msg.sentence_type == "RMC":
+                RMC = {
+                    "datestamp": msg.datestamp.isoformat(),
+                }
+                nmea_parameters.update(RMC)
+
+            elif msg.sentence_type == "VTG":
+                VTG = {
+                    "sog": msg.spd_over_grnd_kts,
+                    "cog": msg.true_track,
+                }
+                nmea_parameters.update(VTG)
+
+            elif msg.sentence_type == "ROT":
+                ROT = {
+                    "rot": msg.rate_of_turn,
+                }
+                nmea_parameters.update(ROT)
+
+            elif msg.sentence_type == "GST":
+                GST = {
+                    "std_dev_altitude": msg.std_dev_altitude,
+                    "std_dev_longitude": msg.std_dev_longitude,
+                    "std_dev_latitude": msg.std_dev_latitude,
+                }
+                nmea_parameters.update(GST)
+
         except Exception as e:
-            LOGGER.error(e)
-            continue
-
-    return ""
-
+            LOGGER.info(e)
+            pass
+    LOGGER.info(nmea_parameters)
+    return nmea_parameters
 
 if __name__ == "__main__":
 
@@ -119,13 +185,11 @@ if __name__ == "__main__":
 
     source = Stream()
 
-    # RAW MQTT stream 
+    # RAW MQTT stream
     pipe_to_brefv_raw = source.map(to_brefv_raw).sink(to_mqtt, topic=MQTT_TOPIC_RAW)
 
     # JSON MQTT stream
     pipe_to_brefv_json = source.map(pars_nmea).map(to_brefv_raw).sink(to_mqtt, topic=MQTT_TOPIC_JSON)
-    
-
 
     LOGGER.info("Connecting to MQTT broker...")
     mq.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT)
