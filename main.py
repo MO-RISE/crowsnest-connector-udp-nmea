@@ -1,9 +1,11 @@
+from copy import error
 import logging
 from typing import Any
 import warnings
 import threading
 import socket
 import struct
+import pynmea2
 
 from datetime import datetime, timezone
 from streamz import Stream
@@ -22,7 +24,8 @@ MQTT_TRANSPORT: str = env("MQTT_TRANSPORT", "tcp")
 MQTT_TLS: bool = env.bool("MQTT_TLS", False)
 MQTT_USER: str = env("MQTT_USER", None)
 MQTT_PASSWORD: str = env("MQTT_PASSWORD", None)
-MQTT_TOPIC: str = env("MQTT_TOPIC", "SENSOR/TOPIC/RAW")
+MQTT_TOPIC_RAW: str = env("MQTT_TOPIC", "CROWSNEST/PLATFORM/SENSOR/ID/RAW")
+MQTT_TOPIC_JSON: str = env("MQTT_TOPIC", "CROWSNEST/PLATFORM/SENSOR/ID/JSON")
 
 MCAST_GRP: str = env("MCAST_GRP", "239.192.0.3")
 MCAST_PORT: int = env.int("MCAST_PORT", 60003)
@@ -72,7 +75,7 @@ def to_mqtt(payload: Any, topic: str):
         LOGGER.exception("Failed publishing to broker!")
 
 
-def multicast_nmea_0183(source):
+def listen_multicast_nmea_0183(source):
     """Multicast input"""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -87,6 +90,24 @@ def multicast_nmea_0183(source):
         LOGGER.info(sock.recv(10240))
 
 
+def pars_nmea(nmea_msg):
+    """Parsing ANavS NMEA sentence"""
+    nmea__list = nmea_msg["message"].split("\r")
+
+    for nmea_str  in nmea__list:
+        nmea_str =  "$"+ nmea_str.split("$")[-1]
+        LOGGER.info(nmea_str)
+        try:
+            msg = pynmea2.parse( nmea_str)
+            LOGGER.info(repr(msg))
+            LOGGER.info("--------")
+        except Exception as e:
+            LOGGER.error(e)
+            continue
+
+    return ""
+
+
 if __name__ == "__main__":
 
     # Build pipeline
@@ -95,19 +116,16 @@ if __name__ == "__main__":
 
     source = Stream()
 
-    # RAW (test)
+    # RAW MQTT stream 
+    pipe_to_brefv = source.map(to_brefv_raw).sink(to_mqtt, topic=MQTT_TOPIC_RAW)
 
-    pipe_to_brefv = source.latest().map(to_brefv_raw).sink(to_mqtt, topic=MQTT_TOPIC)
-
-
-    # To Readable
-
-    # pipe_to_brefv = (
-    #     source.latest()
-    #     .rate_limit(1 / POINTCLOUD_FREQUENCY)
-    #     .map(partial(rotate_pcd, attitude=OUSTER_ATTITUDE))
-    #     .map(to_brefv)
-    # )
+    # JSON MQTT stream
+    pipe_to_brefv = (
+        source
+        .map(pars_nmea)
+        .map(to_brefv)
+        .sink(to_mqtt, topic=MQTT_TOPIC)
+    )
 
     # # pipe_to_brefv.sink(partial(to_mqtt, topic=MQTT_TOPIC_POINTCLOUD))
 
@@ -118,4 +136,4 @@ if __name__ == "__main__":
     threading.Thread(target=mq.loop_forever, daemon=True).start()
 
     # MAIN listener
-    multicast_nmea_0183(source)
+    listen_multicast_nmea_0183(source)

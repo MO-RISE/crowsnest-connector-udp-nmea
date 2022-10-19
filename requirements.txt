@@ -5,3 +5,4 @@ pydantic
 datamodel-code-generator
 numpy
 scipy
+pynmea2
