@@ -90,11 +90,12 @@ def listen_multicast_nmea_0183(source):
         LOGGER.info(sock.recv(10240))
 
 
-def pars_nmea(nmea_msg):
+def pars_nmea(nmea_msg_bytes):
     """Parsing ANavS NMEA sentence"""
-    nmea__list = nmea_msg["message"].split("\r")
+    nmea_msg = nmea_msg_bytes.decode("utf-8") 
+    nmea_list = nmea_msg["message"].split("\r")
 
-    for nmea_str  in nmea__list:
+    for nmea_str  in nmea_list:
         nmea_str =  "$"+ nmea_str.split("$")[-1]
         LOGGER.info(nmea_str)
         try:
