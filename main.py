@@ -13,7 +13,6 @@ from environs import Env
 from paho.mqtt.client import Client as MQTT
 
 from brefv_spec.envelope import Envelope
-from symbol import parameters
 
 
 # Reading config from environment variables
