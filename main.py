@@ -92,7 +92,9 @@ def listen_multicast_nmea_0183(source):
 
 def pars_nmea(nmea_msg_bytes):
     """Parsing ANavS NMEA sentence"""
+    LOGGER.info(nmea_msg_bytes)
     nmea_msg = nmea_msg_bytes.decode("utf-8") 
+    LOGGER.info(nmea_msg)
     nmea_list = nmea_msg["message"].split("\r")
 
     for nmea_str  in nmea_list:
