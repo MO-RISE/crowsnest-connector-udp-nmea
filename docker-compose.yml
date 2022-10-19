@@ -5,10 +5,7 @@ services:
     build: .
     restart: unless-stopped
     network_mode: "host"
-    # ports: 
-    #  - 60003:60003 
     environment:
       - MCAST_GRP=239.192.0.3
       - MCAST_PORT=60003
-      - SENSOR_FREQUENCY=1
-      - MQTT_TOPIC=SENSOR/GNSS/RAW
+      - MQTT_TOPIC=CROWSNEST/SEAHORSE/GNSS/0/RAW

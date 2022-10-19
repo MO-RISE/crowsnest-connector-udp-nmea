@@ -23,7 +23,7 @@ MQTT_TLS: bool = env.bool("MQTT_TLS", False)
 MQTT_USER: str = env("MQTT_USER", None)
 MQTT_PASSWORD: str = env("MQTT_PASSWORD", None)
 MQTT_TOPIC: str = env("MQTT_TOPIC", "SENSOR/TOPIC/RAW")
-SENSOR_FREQUENCY: float = env.float("SENSOR_FREQUENCY", default=1)
+
 MCAST_GRP: str = env("MCAST_GRP", "239.192.0.3")
 MCAST_PORT: int = env.int("MCAST_PORT", 60003)
 
