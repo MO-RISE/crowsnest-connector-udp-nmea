@@ -50,9 +50,9 @@ for nmea_str in nmea__list:
         if msg.sentence_type == "GGA":
             GGA = {
                 "timestamp": msg.timestamp.isoformat(),
-                "lon": msg.lon,
+                 "lon": float(msg.lon)  /100,
                 "lon_dir": msg.lon_dir,
-                "lat": msg.lat,
+                "lat": float(msg.lat) /100,
                 "lat_dir": msg.lat_dir,
                 "altitude": msg.altitude,
                 "lat_dir": msg.lat_dir,

@@ -13,7 +13,7 @@ from environs import Env
 from paho.mqtt.client import Client as MQTT
 
 from brefv_spec.envelope import Envelope
-
+from brefv_spec.messages.position import Position 
 
 # Reading config from environment variables
 env = Env()
@@ -60,6 +60,8 @@ def to_brefv_raw(in_msg):
     return envelope.json()
 
 
+
+
 def to_mqtt(payload: Any, topic: str):
     """Publish a payload to a mqtt topic"""
 
@@ -89,7 +91,7 @@ def listen_multicast_nmea_0183(source):
 
 
 def pars_nmea(nmea_msg_bytes):
-    """Parsing ANavS NMEA sentence"""
+    """Parsing ANavS NMEA sentences"""
 
     nmea_parameters = {
         "timestamp": None,
@@ -115,7 +117,7 @@ def pars_nmea(nmea_msg_bytes):
 
         try:
             nmea_type_msg = nmea_str.split(",")[0].replace("$", "")
-        
+
             if nmea_type_msg == "PASHR":
                 PASHR_items = nmea_str.split(",")
                 PASHR = {
@@ -132,9 +134,9 @@ def pars_nmea(nmea_msg_bytes):
             if msg.sentence_type == "GGA":
                 GGA = {
                     "timestamp": msg.timestamp.isoformat(),
-                    "lon": msg.lon,
+                    "lon": float(msg.lon) /100,
                     "lon_dir": msg.lon_dir,
-                    "lat": msg.lat,
+                    "lat": float(msg.lat) /100,
                     "lat_dir": msg.lat_dir,
                     "altitude": msg.altitude,
                     "lat_dir": msg.lat_dir,
@@ -174,7 +176,23 @@ def pars_nmea(nmea_msg_bytes):
             LOGGER.info(e)
             pass
     LOGGER.info(nmea_parameters)
+
     return nmea_parameters
+
+
+def to_brefv_nmea(GNSS_parameters):
+    """NMEA in message to brefv envelope"""
+
+    # TODO: Create brefv format 
+
+    envelope = Envelope(
+        sent_at=datetime.now(timezone.utc).isoformat(),
+        message=GNSS_parameters,
+    )
+    LOGGER.debug("Assembled into brefv envelope: %s", envelope)
+    return envelope.json()
+
+
 
 if __name__ == "__main__":
 
