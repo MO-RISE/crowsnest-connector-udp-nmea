@@ -1,19 +1,16 @@
-# crowsnest-connector-udp-nmea
+# Crowsnest-connector-udp-nmea
 
-A crowsnest microservice for connecting to NMEA UDP stream
+A crowsnest microservice for connecting to NMEA UDP stream GNSS data.
 
-### How it works
+## How it works
 
-For now, this microservice jsut does the basics.
+For now, this microservice just does the basics.
 
-- Connects to UPD
-- Listens on the continuous stream
-- Transform these 0183 or 2000 NMEA senteces
-- Wraps into a brefv message and outputs over MQTT
+- Connects to UPD/Multicast stream
+- Transform 0183 NMEA sentences to JSON
+- Wraps into a brefv message over MQTT the RAW NMEA and JSON parsed data
 
-### Typical setup (docker-compose)
-
-docker-compose.udp-nmea.yml 
+### Typical setup: docker-compose.nmea-anavs.yml
 
 ```yaml
 version: "3"
@@ -33,58 +30,61 @@ services:
 
 To setup the development environment:
 
+```bash
     python3 -m venv venv
     source ven/bin/activate
+```
 
 Install everything thats needed for development:
 
+```bash
     pip install -r requirements_dev.txt
+```
 
 To run the linters:
 
+```bash
     black main.py tests
     pylint main.py
+```
 
 To run the tests:
 
+```bash
     no automatic tests yet...
+```
 
-Add breaf as submodule:
+Add brefv as submodule:
 
-```basch
-
+```bash
 git submodule add <url>
 
-
 # Once the project is added to your repo, you have to init and update it.
-
 git submodule init
 git submodule update
 
 ```
 
-Kredit to https://github.com/Knio/pynmea2
-
+Credit to https://github.com/Knio/pynmea2
 
 ## License
 
 Apache 2.0, see [LICENSE](./LICENSE)
 
-
-
-## NMEA parser to brefv 
+## Extra Notes NMEA parser to brefv
 
 Messages types
+
 ```bash
 (Not parsed to brefv)
 $GNGSA,M,1,04,06,07,09,11,16,20,,,,,,1.53,1.09,1.07,1*0F
 <GSA(
     mode='M', (M= Manual, A=Automatic)
     mode_fix_type='1', (Fix type: 1=Not available, 2=2D, 3=3D)
-    
+
     sv_id01='04', sv_id02='06', sv_id03='07', sv_id04='09'
     sv_id05='11', sv_id06='16', sv_id07='20', sv_id08='', sv_id09=''
-    sv_id10='', sv_id11='', sv_id12='', 
+    sv_id10='', sv_id11='', sv_id12='',
 
     pdop='1.53', (PDOP 0.5 to 99.9)
     hdop='1.09', (HDOP 0.5 to 99.9)
@@ -102,37 +102,37 @@ $GNGGA,114835.60,5742.5522736,N,01156.8392494,E,5,15,1.1,5.18,M,35.78,M,,*77
     lat_dir='N', (hemisphere, N or S )
     lon='01156.8392494', (Longitude, the format is dddmm.mmmmmmm)
     lon_dir='E', (hemisphere, E or W)
-    gps_qual=5, (GPS quality indicator:  
-                    0: GNSS fix not available 
+    gps_qual=5, (GPS quality indicator:
+                    0: GNSS fix not available
                     1: GNSS fix valid
                     4: RTK fixed ambiguities
                     5: RTK float ambiguities
                 )
     num_sats='15', (Number of satellites used, Fixed length 01 for single digits)
-    
+
     horizontal_dil='1.1', (HDOP, XX.X Variable/fixed length 1 digit after dot, variable before)
     altitude=5.18,  (Altitude geoid height)
     altitude_units='M',  (Unit of altitude)
-    geo_sep='35.78', 
-    geo_sep_units='M', 
-    age_gps_data='', 
+    geo_sep='35.78',
+    geo_sep_units='M',
+    age_gps_data='',
     ref_station_id='')>
 
 
--------- 
+--------
 (TODO)
 PASHR – Attitude Data
 $PASHR,114835.60,027.23,T,-75.83,,,3.158,,4.831,1,*22
 <ASHRATT(
-    _r='R', 
+    _r='R',
     1) timestamp=datetime.time(11, 48, 35, 600000), (UTC)
     2) true_heading=27.23, (Degrees)
-    3) is_true_heading='T', 
+    3) is_true_heading='T',
     4) roll=-75.83, (Degrees)
     5) pitch=None, (Degrees)
-    6) heading=None,  
+    6) heading=None,
     7) roll_accuracy=3.158, (Degrees)
-    8) pitch_accuracy=None, 
+    8) pitch_accuracy=None,
     9) heading_accuracy=4.831, (Degrees, standard deviation)
     aiding_status=Decimal('1'), (0: No position 1: RTK float position 2: RTK fixed position)
     imu_status=None)>
@@ -151,22 +151,22 @@ $GNRMC,114835.60,A,5742.5522736,N,01156.8392494,E,,,191022,,W,D,V*61
     spd_over_grnd=None,
     true_course=None,
     datestamp=datetime.date(2022, 10, 19),
-    mag_variation='', 
-    mag_var_dir='W') 
+    mag_variation='',
+    mag_var_dir='W')
     data=['D', 'V']>
 
 --------
 VTG – Course over ground and ground speed
 $GNVTG,,T,,M,,N,,K,A*3D
 <VTG(
-    true_track=None, 
-    true_track_sym='T', 
-    mag_track=None, 
-    mag_track_sym='M', 
-    spd_over_grnd_kts=None, 
-    spd_over_grnd_kts_sym='N', 
-    spd_over_grnd_kmph=None, 
-    spd_over_grnd_kmph_sym='K', 
+    true_track=None,
+    true_track_sym='T',
+    mag_track=None,
+    mag_track_sym='M',
+    spd_over_grnd_kts=None,
+    spd_over_grnd_kts_sym='N',
+    spd_over_grnd_kmph=None,
+    spd_over_grnd_kmph_sym='K',
     faa_mode='A')>
 
 
@@ -174,39 +174,39 @@ $GNVTG,,T,,M,,N,,K,A*3D
 PASHR  – Attitude Data
 $PASHR,114835.60,027.23,T,-75.83,,,3.158,,4.831,1,*22
 <ASHRATT(
-    _r='R', 
-    timestamp=datetime.time(11, 48, 35, 600000), 
-    true_heading=27.23, 
+    _r='R',
+    timestamp=datetime.time(11, 48, 35, 600000),
+    true_heading=27.23,
     is_true_heading='T',
-    roll=-75.83, pitch=None, 
-    heading=None, 
-    roll_accuracy=3.158, 
-    pitch_accuracy=None, 
-    heading_accuracy=4.831, 
-    aiding_status=Decimal('1'), 
+    roll=-75.83, pitch=None,
+    heading=None,
+    roll_accuracy=3.158,
+    pitch_accuracy=None,
+    heading_accuracy=4.831,
+    aiding_status=Decimal('1'),
     imu_status=None)>
 
 
 --------
 $GNZDA,114835.60,19,10,2022,,*7F
 <ZDA(
-    timestamp=datetime.time(11, 48, 35, 600000), 
-    day=19, 
-    month=10, 
-    year=2022, 
-    local_zone=None, 
+    timestamp=datetime.time(11, 48, 35, 600000),
+    day=19,
+    month=10,
+    year=2022,
+    local_zone=None,
     local_zone_minutes=None)>
 
 --------
 $GNGST,114835.60,,,,,0.264,0.170,0.334*47
 <GST(
-    timestamp=datetime.time(11, 48, 35, 600000), 
-    rms=None, 
-    std_dev_major=None, 
-    std_dev_minor=None, 
+    timestamp=datetime.time(11, 48, 35, 600000),
+    rms=None,
+    std_dev_major=None,
+    std_dev_minor=None,
     orientation=None,
-    std_dev_latitude=0.264, 
-    std_dev_longitude=0.17, 
+    std_dev_latitude=0.264,
+    std_dev_longitude=0.17,
     std_dev_altitude=0.334)>
 
 --------

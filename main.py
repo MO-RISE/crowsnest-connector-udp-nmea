@@ -14,7 +14,6 @@ from environs import Env
 from paho.mqtt.client import Client as MQTT
 
 from brefv_spec.envelope import Envelope
-from brefv_spec.messages.position import Position
 
 # Reading config from environment variables
 env = Env()
@@ -43,10 +42,8 @@ LOGGER = logging.getLogger("crowsnest-connector-upd-nmea")
 # Create mqtt client and configure it according to configuration
 mq = MQTT(client_id=MQTT_CLIENT_ID, transport=MQTT_TRANSPORT)
 mq.username_pw_set(MQTT_USER, MQTT_PASSWORD)
-
 if MQTT_TLS:
     mq.tls_set()
-
 mq.enable_logger(LOGGER)
 
 
@@ -76,17 +73,16 @@ def to_mqtt(payload: Any, topic: str):
 
 def listen_multicast_nmea_0183(source):
     """Multicast input"""
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
     sock.bind((MCAST_GRP, MCAST_PORT))
     mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
-
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
     while True:
         source.emit(sock.recv(10240))
-        # LOGGER.debug(sock.recv(10240))
+        LOGGER.debug(sock.recv(10240))
 
 
 def pars_nmea(nmea_msg_bytes):
@@ -111,14 +107,15 @@ def pars_nmea(nmea_msg_bytes):
         try:
             nmea_type_msg = nmea_str.split(",")[0].replace("$", "")
 
+
             if nmea_type_msg == "PASHR":
                 PASHR_items = nmea_str.split(",")
 
                 for idx, item in enumerate(PASHR_items):
                     try:
-                        PASHR_items[idx] = float(PASHR_items[idx])
+                        PASHR_items[idx] = float(item)
                     except:
-                        pass
+                        pass # Ignoring numbers 
 
                 PASHR = {
                     "heading": PASHR_items[2],
@@ -131,19 +128,20 @@ def pars_nmea(nmea_msg_bytes):
 
             msg = pynmea2.parse(nmea_str)
 
+
             if msg.sentence_type == "GGA":
 
                 # Longitude +(North) or -(South)
                 longitude = float(msg.lon) / 100  # to dd.mmmmm
-                long_deg_min = ((longitude % 1)*100) /60 # Minute to degrees
+                long_deg_min = ((longitude % 1) * 100) / 60  # Minute to degrees
                 longitude = int(longitude) + long_deg_min
-            
+
                 if msg.lon_dir == "S":
                     longitude = -longitude
 
                 # Latitude +(East) or -(West)
                 latitude = float(msg.lat) / 100  # to degrees
-                lat_deg_min = ((latitude % 1)*100) /60 # Minute to degrees
+                lat_deg_min = ((latitude % 1) * 100) / 60  # Minute to degrees
                 latitude = int(latitude) + lat_deg_min
                 if msg.lon_dir == "W":
                     latitude = -latitude
@@ -157,6 +155,7 @@ def pars_nmea(nmea_msg_bytes):
                 }
                 nmea_parameters.update(GGA)
 
+
             elif msg.sentence_type == "RMC":
 
                 msg_UTC = msg.datestamp.isoformat() + " " + msg.timestamp.isoformat()
@@ -168,6 +167,7 @@ def pars_nmea(nmea_msg_bytes):
                 }
                 nmea_parameters.update(RMC)
 
+
             elif msg.sentence_type == "VTG":
                 VTG = {
                     "sog": msg.spd_over_grnd_kts,
@@ -175,11 +175,13 @@ def pars_nmea(nmea_msg_bytes):
                 }
                 nmea_parameters.update(VTG)
 
+
             elif msg.sentence_type == "ROT":
                 ROT = {
                     "rot": float(msg.rate_of_turn),
                 }
                 nmea_parameters.update(ROT)
+
 
             elif msg.sentence_type == "GST":
                 GST = {
@@ -193,14 +195,13 @@ def pars_nmea(nmea_msg_bytes):
             LOGGER.error(e)
 
     LOGGER.info(nmea_parameters)
-
     return nmea_parameters
 
 
 def to_brefv_nmea(GNSS_parameters):
     """NMEA in message to brefv envelope"""
 
-    # TODO: Create brefv format
+    # TODO: Modify to brefv format
 
     envelope = Envelope(
         sent_at=datetime.now(timezone.utc).isoformat(),
@@ -214,8 +215,6 @@ if __name__ == "__main__":
 
     # Build pipeline
     LOGGER.info("Building pipeline...")
-    LOGGER.info("Connecting to multicast...")
-
     source = Stream()
 
     # RAW MQTT stream
