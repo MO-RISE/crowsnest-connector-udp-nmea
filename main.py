@@ -123,9 +123,9 @@ def pars_nmea(nmea_msg_bytes):
                 PASHR = {
                     "heading": float(PASHR_items[2]),
                     "roll": float(PASHR_items[4]),
-                    "pitch": PASHR_items[5],
-                    "roll_accuracy": PASHR_items[7],
-                    "heading_accuracy": PASHR_items[9],
+                    "pitch": float(PASHR_items[5]),
+                    "roll_accuracy": float(PASHR_items[7]),
+                    "heading_accuracy": float(PASHR_items[9]),
                 }
                 nmea_parameters.update(PASHR)
 
@@ -134,13 +134,12 @@ def pars_nmea(nmea_msg_bytes):
             if msg.sentence_type == "GGA":
                 GGA = {
                     "timestamp": msg.timestamp.isoformat(),
-                    "lon": float(msg.lon) /100,
-                    "lon_dir": msg.lon_dir,
-                    "lat": float(msg.lat) /100,
-                    "lat_dir": msg.lat_dir,
+                    "longitude": float(msg.lon) /100,
+                    "longitude_dir": msg.lon_dir,
+                    "latitude": float(msg.lat) /100,
+                    "latitude_dir": msg.lat_dir,
                     "altitude": msg.altitude,
-                    "lat_dir": msg.lat_dir,
-                    "num_satellites": msg.num_sats,
+                    "num_satellites": int(msg.num_sats),
                     "gps_quality": msg.gps_qual,
                 }
                 nmea_parameters.update(GGA)
