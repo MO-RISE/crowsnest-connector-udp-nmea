@@ -107,9 +107,11 @@ def pars_nmea(nmea_msg_bytes):
 
     for nmea_str in nmea_list:
         nmea_str = "$" + nmea_str.split("$")[-1]
+        LOGGER.info(nmea_str)
 
         try:
             nmea_type_msg = nmea_str.split(",")[0].replace("$", "")
+            LOGGER.info(nmea_type_msg)
 
             if nmea_type_msg == "PASHR":
                 PASHR_items = nmea_str.split(",")
@@ -121,6 +123,7 @@ def pars_nmea(nmea_msg_bytes):
                     "heading_accuracy": float(PASHR_items[9]),
                 }
                 nmea_parameters.update(PASHR)
+
 
             msg = pynmea2.parse(nmea_str)
 
