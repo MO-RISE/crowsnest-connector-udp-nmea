@@ -6,6 +6,7 @@ import threading
 import socket
 import struct
 import pynmea2
+import pytz
 
 from datetime import datetime, timezone
 from streamz import Stream
@@ -13,7 +14,7 @@ from environs import Env
 from paho.mqtt.client import Client as MQTT
 
 from brefv_spec.envelope import Envelope
-from brefv_spec.messages.position import Position 
+from brefv_spec.messages.position import Position
 
 # Reading config from environment variables
 env = Env()
@@ -58,8 +59,6 @@ def to_brefv_raw(in_msg):
     )
     LOGGER.debug("Assembled into brefv envelope: %s", envelope)
     return envelope.json()
-
-
 
 
 def to_mqtt(payload: Any, topic: str):
@@ -132,21 +131,34 @@ def pars_nmea(nmea_msg_bytes):
             msg = pynmea2.parse(nmea_str)
 
             if msg.sentence_type == "GGA":
+
+                # Longitude +(North) or -(South)
+                longitude = float(msg.lon) / 100  # to degrees
+                if msg.lon_dir == "S":
+                    longitude = -longitude
+
+                # Latitude +(East) or -(West)
+                latitude = float(msg.lat) / 100  # to degrees
+                if msg.lon_dir == "W":
+                    latitude = -latitude
+
                 GGA = {
-                    "timestamp": msg.timestamp.isoformat(),
-                    "longitude": float(msg.lon) /100,
-                    "longitude_dir": msg.lon_dir,
-                    "latitude": float(msg.lat) /100,
-                    "latitude_dir": msg.lat_dir,
-                    "altitude": msg.altitude,
+                    "longitude": longitude,
+                    "latitude": latitude,
+                    "altitude": float(msg.altitude),
                     "num_satellites": int(msg.num_sats),
-                    "gps_quality": msg.gps_qual,
+                    "gps_quality": int(msg.gps_qual),
                 }
                 nmea_parameters.update(GGA)
 
             elif msg.sentence_type == "RMC":
+
+                msg_UTC = msg.datestamp.isoformat() + " " + msg.timestamp.isoformat()
+                msg_UTC = datetime.strptime(msg_UTC, "%Y-%m-%d %H:%M:%S.%f")
+                msg_UTC = pytz.utc.localize(msg_UTC)
+
                 RMC = {
-                    "datestamp": msg.datestamp.isoformat(),
+                    "timestamp": msg_UTC,
                 }
                 nmea_parameters.update(RMC)
 
@@ -182,7 +194,7 @@ def pars_nmea(nmea_msg_bytes):
 def to_brefv_nmea(GNSS_parameters):
     """NMEA in message to brefv envelope"""
 
-    # TODO: Create brefv format 
+    # TODO: Create brefv format
 
     envelope = Envelope(
         sent_at=datetime.now(timezone.utc).isoformat(),
@@ -190,7 +202,6 @@ def to_brefv_nmea(GNSS_parameters):
     )
     LOGGER.debug("Assembled into brefv envelope: %s", envelope)
     return envelope.json()
-
 
 
 if __name__ == "__main__":
