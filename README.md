@@ -13,20 +13,20 @@ For now, this microservice jsut does the basics.
 
 ### Typical setup (docker-compose)
 
+docker-compose.udp-nmea.yml 
+
 ```yaml
 version: "3"
 services:
-  ouster-lidar:
-    image: ghcr.io/mo-rise/crowsnest-connector-lidar-ouster:latest
+  multicast-nmea:
+    image: ghcr.io/mo-rise/crowsnest-connector-udp-nmea:latest
     restart: unless-stopped
     network_mode: "host"
     environment:
-      - MQTT_BROKER_HOST=localhost
-      - MQTT_BROKER_PORT=1883
-      - MQTT_TOPIC_POINTCLOUD=CROWSNEST/<platform>/LIDAR/<device_id>/POINTCLOUD
-      - OUSTER_HOSTNAME=<IP of sensor>
-      - OUSTER_ATTITUDE=90,45,180
-      - POINTCLOUD_FREQUENCY=2
+      - MCAST_GRP=239.192.0.3
+      - MCAST_PORT=60003
+      - MQTT_TOPIC_RAW=CROWSNEST/SEAHORSE/GNSS/0/RAW
+      - MQTT_TOPIC_JSON=CROWSNEST/SEAHORSE/GNSS/0/JSON
 ```
 
 ## Development setup
