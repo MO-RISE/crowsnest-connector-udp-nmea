@@ -29,8 +29,8 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ghcr.io/mo-rise/crowsnest-connector-lidar-ouster:latest
-            ghcr.io/mo-rise/crowsnest-connector-lidar-ouster:${{ github.event.release.tag_name }}
+            ghcr.io/mo-rise/crowsnest-connector-udp-nmea:latest
+            ghcr.io/mo-rise/crowsnest-connector-udp-nmea:${{ github.event.release.tag_name }}
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

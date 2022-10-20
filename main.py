@@ -33,7 +33,7 @@ MCAST_PORT: int = env.int("MCAST_PORT", 60003)
 
 
 # Setup logger
-LOG_LEVEL = env.log_level("LOG_LEVEL", logging.INFO)
+LOG_LEVEL = env.log_level("LOG_LEVEL", logging.WARNING)
 logging.basicConfig(level=LOG_LEVEL)
 logging.captureWarnings(True)
 warnings.filterwarnings("once")
@@ -107,30 +107,27 @@ def pars_nmea(nmea_msg_bytes):
 
     for nmea_str in nmea_list:
         nmea_str = "$" + nmea_str.split("$")[-1]
-        LOGGER.info(nmea_str)
 
         try:
             nmea_type_msg = nmea_str.split(",")[0].replace("$", "")
-            LOGGER.info(nmea_type_msg)
 
             if nmea_type_msg == "PASHR":
                 PASHR_items = nmea_str.split(",")
-                
+
                 for idx, item in enumerate(PASHR_items):
                     try:
                         PASHR_items[idx] = float(PASHR_items[idx])
                     except:
-                        pass          
+                        pass
 
                 PASHR = {
-                        "heading": PASHR_items[2],
-                        "roll": PASHR_items[4],
-                        "pitch": PASHR_items[5],
-                        "roll_accuracy": PASHR_items[7],
-                        "heading_accuracy": PASHR_items[9],
-                    }
+                    "heading": PASHR_items[2],
+                    "roll": PASHR_items[4],
+                    "pitch": PASHR_items[5],
+                    "roll_accuracy": PASHR_items[7],
+                    "heading_accuracy": PASHR_items[9],
+                }
                 nmea_parameters.update(PASHR)
-
 
             msg = pynmea2.parse(nmea_str)
 
@@ -188,8 +185,8 @@ def pars_nmea(nmea_msg_bytes):
                 nmea_parameters.update(GST)
 
         except Exception as e:
-            LOGGER.info(e)
-            pass
+            LOGGER.error(e)
+
     LOGGER.info(nmea_parameters)
 
     return nmea_parameters
