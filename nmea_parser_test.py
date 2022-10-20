@@ -39,14 +39,21 @@ for nmea_str in nmea__list:
      
         if nmea_type_msg == "PASHR":
             PASHR_items = nmea_str.split(",")
+            for idx, item in enumerate(PASHR_items):
+                try:
+                    PASHR_items[idx] = float(PASHR_items[idx])
+                except:
+                    pass          
+
             PASHR = {
-                "heading": float(PASHR_items[2]),
-                "roll": float(PASHR_items[4]),
-                "pitch": PASHR_items[5],
-                "roll_accuracy": PASHR_items[7],
-                "heading_accuracy": PASHR_items[9],
-            }
+                    "heading": PASHR_items[2],
+                    "roll": PASHR_items[4],
+                    "pitch": PASHR_items[5],
+                    "roll_accuracy": PASHR_items[7],
+                    "heading_accuracy": PASHR_items[9],
+                }
             nmea_parameters.update(PASHR)
+
 
         msg = pynmea2.parse(nmea_str)
 
