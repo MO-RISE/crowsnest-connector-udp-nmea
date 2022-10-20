@@ -134,12 +134,17 @@ def pars_nmea(nmea_msg_bytes):
             if msg.sentence_type == "GGA":
 
                 # Longitude +(North) or -(South)
-                longitude = float(msg.lon) / 100  # to degrees
+                longitude = float(msg.lon) / 100  # to dd.mmmmm
+                long_deg_min = ((longitude % 1)*100) /60 # Minute to degrees
+                longitude = int(longitude) + long_deg_min
+            
                 if msg.lon_dir == "S":
                     longitude = -longitude
 
                 # Latitude +(East) or -(West)
                 latitude = float(msg.lat) / 100  # to degrees
+                lat_deg_min = ((latitude % 1)*100) /60 # Minute to degrees
+                latitude = int(latitude) + lat_deg_min
                 if msg.lon_dir == "W":
                     latitude = -latitude
 
