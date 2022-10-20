@@ -86,7 +86,7 @@ def listen_multicast_nmea_0183(source):
 
     while True:
         source.emit(sock.recv(10240))
-        LOGGER.info(sock.recv(10240))
+        # LOGGER.debug(sock.recv(10240))
 
 
 def pars_nmea(nmea_msg_bytes):
@@ -94,21 +94,15 @@ def pars_nmea(nmea_msg_bytes):
 
     nmea_parameters = {
         "timestamp": None,
-        "lat": None,
-        "lat_dir": None,
-        "lon": None,
-        "lon_dir": None,
         "sog": None,
         "cog": None,
         "rot": None,
-        "heading": None,
         "altitude": None,
         "gps_quality": None,
         "num_satellites": None,
     }
 
     nmea_msg = nmea_msg_bytes.decode("utf-8")
-    LOGGER.info(nmea_msg)
     nmea_list = nmea_msg.split("\r")
 
     for nmea_str in nmea_list:
@@ -171,7 +165,7 @@ def pars_nmea(nmea_msg_bytes):
 
             elif msg.sentence_type == "ROT":
                 ROT = {
-                    "rot": msg.rate_of_turn,
+                    "rot": float(msg.rate_of_turn),
                 }
                 nmea_parameters.update(ROT)
 
