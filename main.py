@@ -107,7 +107,6 @@ def pars_nmea(nmea_msg_bytes):
         try:
             nmea_type_msg = nmea_str.split(",")[0].replace("$", "")
 
-
             if nmea_type_msg == "PASHR":
                 PASHR_items = nmea_str.split(",")
 
@@ -115,7 +114,7 @@ def pars_nmea(nmea_msg_bytes):
                     try:
                         PASHR_items[idx] = float(item)
                     except:
-                        pass # Ignoring numbers 
+                        pass  # Ignoring numbers
 
                 PASHR = {
                     "heading": PASHR_items[2],
@@ -127,7 +126,6 @@ def pars_nmea(nmea_msg_bytes):
                 nmea_parameters.update(PASHR)
 
             msg = pynmea2.parse(nmea_str)
-
 
             if msg.sentence_type == "GGA":
 
@@ -146,7 +144,12 @@ def pars_nmea(nmea_msg_bytes):
                 if msg.lon_dir == "W":
                     latitude = -latitude
 
+                msg_UTC = msg.timestamp.isoformat()
+                msg_UTC = datetime.strptime(msg_UTC, "%H:%M:%S.%f")
+                msg_UTC = pytz.utc.localize(msg_UTC)
+
                 GGA = {
+                    "timestamp": msg_UTC,
                     "longitude": longitude,
                     "latitude": latitude,
                     "altitude": float(msg.altitude),
@@ -154,7 +157,6 @@ def pars_nmea(nmea_msg_bytes):
                     "gps_quality": int(msg.gps_qual),
                 }
                 nmea_parameters.update(GGA)
-
 
             elif msg.sentence_type == "RMC":
 
@@ -167,7 +169,6 @@ def pars_nmea(nmea_msg_bytes):
                 }
                 nmea_parameters.update(RMC)
 
-
             elif msg.sentence_type == "VTG":
                 VTG = {
                     "sog": msg.spd_over_grnd_kts,
@@ -175,13 +176,11 @@ def pars_nmea(nmea_msg_bytes):
                 }
                 nmea_parameters.update(VTG)
 
-
             elif msg.sentence_type == "ROT":
                 ROT = {
                     "rot": float(msg.rate_of_turn),
                 }
                 nmea_parameters.update(ROT)
-
 
             elif msg.sentence_type == "GST":
                 GST = {
